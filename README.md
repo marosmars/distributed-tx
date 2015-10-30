@@ -1,1 +1,3 @@
-# distributed-tx \n Distributed transactions for ODL
+# distributed-tx
+
+Distributed (network wide) transactions for ODL
