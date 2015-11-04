@@ -5,11 +5,18 @@ package org.opendaylight.distributed.tx.spi;
  */
 public class TxException extends RuntimeException {
 
+    public TxException(final String s, final RuntimeException e) {
+        super(s, e);
+    }
+
     /**
      * Generic per-node-tx initialization failure
      */
     public static class TxInitiatizationFailedException extends TxException {
 
+        public TxInitiatizationFailedException(final String s, final RuntimeException e) {
+            super(s, e);
+        }
     }
 
     /**
@@ -17,6 +24,9 @@ public class TxException extends RuntimeException {
      */
     public static class UnknownNodeException extends TxInitiatizationFailedException {
 
+        public UnknownNodeException(final String s, final RuntimeException e) {
+            super(s, e);
+        }
     }
 
 }
