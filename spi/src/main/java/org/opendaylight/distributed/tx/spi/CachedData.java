@@ -3,6 +3,7 @@ package org.opendaylight.distributed.tx.spi;
 import com.google.common.base.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 import org.opendaylight.yangtools.yang.data.api.ModifyAction;
@@ -32,4 +33,9 @@ public final class CachedData {
         return operation;
     }
 
+    // FIXME !! store the ds type here, dont return fixed CONFIGURATION. Netconf might only support CONFIG writes,
+    // but other mountpoints might also support writes to operational
+    public LogicalDatastoreType getDsType() {
+        return LogicalDatastoreType.CONFIGURATION;
+    }
 }

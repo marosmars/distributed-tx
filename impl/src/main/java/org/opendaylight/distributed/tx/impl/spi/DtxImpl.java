@@ -180,6 +180,7 @@ public class DtxImpl implements DTx {
 
     private class PerNodeSubmitCallback implements FutureCallback<Void> {
 
+        // TODO this field should be threadsafe
         private final Map<InstanceIdentifier<?>, PerNodeTxState> commitStatus;
         private final Map.Entry<InstanceIdentifier<?>, CachingReadWriteTx> perNodeTx;
         private final SettableFuture<Void> distributedSubmitFuture;
@@ -264,8 +265,7 @@ public class DtxImpl implements DTx {
                     }
 
                     @Override public void onFailure(final Throwable t) {
-                        LOG.warn("Distributed tx filed for {}. Rollback FAILED. Device(s) state is unknown",
-                            perNodeTx.getKey(), t);
+                        LOG.warn("Distributed tx filed. Rollback FAILED. Device(s) state is unknown", t);
                         // t should be rollback failed EX
                         distributedSubmitFuture.setException(t);
                     }

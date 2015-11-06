@@ -45,6 +45,10 @@ public class DTxException extends RuntimeException {
         public RollbackFailedException(final Exception input) {
             super("Unable to perform rollback. Nodes are in unknown state", input);
         }
+
+        public RollbackFailedException(final String format, final Exception e) {
+            super(format, e);
+        }
     }
 
     /**
