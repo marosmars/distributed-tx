@@ -57,10 +57,18 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
         final CheckedFuture<Optional<T>, ReadFailedException> read = delegate
             .read(logicalDatastoreType, instanceIdentifier);
 
-        // TODO should we block here ?
         Futures.addCallback(read, new FutureCallback<Optional<T>>() {
             @Override public void onSuccess(final Optional<T> result) {
                 cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.MERGE));
+
+
+                try {
+                    delegate.merge(logicalDatastoreType, instanceIdentifier, t);
+                } catch (RuntimeException e) {
+                    // FAILURE of edit
+                    // TODO
+                    throw new TxException("Merge failed", e);
+                }
             }
 
             @Override public void onFailure(final Throwable t) {
@@ -68,13 +76,7 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
             }
         });
 
-        try {
-            delegate.merge(logicalDatastoreType, instanceIdentifier, t);
-        } catch (RuntimeException e) {
-            // FAILURE of edit
-            // TODO
-            throw new TxException("Merge failed", e);
-        }
+
     }
 
     @Override public <T extends DataObject> void merge(final LogicalDatastoreType logicalDatastoreType,

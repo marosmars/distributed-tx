@@ -9,9 +9,9 @@ import org.opendaylight.yangtools.yang.data.api.ModifyAction;
 
 public final class CachedData {
 
-    public final InstanceIdentifier<?> id;
-    public final DataObject data;
-    public final ModifyAction operation;
+    private final InstanceIdentifier<?> id;
+    private final DataObject data;
+    private final ModifyAction operation;
 
     public CachedData(@Nonnull final InstanceIdentifier<?> id,
         @Nullable final DataObject data, @Nonnull final ModifyAction operation) {

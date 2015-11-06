@@ -16,7 +16,7 @@ import org.opendaylight.distributed.tx.impl.spi.DTxProviderImpl;
 public class DistributedTxProviderTest {
     @Test
     public void testOnSessionInitiated() {
-        DTxProviderImpl provider = new DTxProviderImpl();
+        DTxProviderImpl provider = new DTxProviderImpl(txProvider);
 
         // ensure no exceptions
         // currently this method is empty
@@ -25,7 +25,7 @@ public class DistributedTxProviderTest {
 
     @Test
     public void testClose() throws Exception {
-        DTxProviderImpl provider = new DTxProviderImpl();
+        DTxProviderImpl provider = new DTxProviderImpl(txProvider);
 
         // ensure no exceptions
         // currently this method is empty

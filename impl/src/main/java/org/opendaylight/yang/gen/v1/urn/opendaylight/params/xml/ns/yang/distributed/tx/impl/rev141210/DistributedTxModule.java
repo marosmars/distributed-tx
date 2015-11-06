@@ -18,7 +18,7 @@ public class DistributedTxModule extends org.opendaylight.yang.gen.v1.urn.openda
 
     @Override
     public java.lang.AutoCloseable createInstance() {
-        final DTxProviderImpl dTxProvider = new DTxProviderImpl();
+        final DTxProviderImpl dTxProvider = new DTxProviderImpl(txProvider);
         getBrokerDependency().registerConsumer(dTxProvider);
         return dTxProvider;
     }
