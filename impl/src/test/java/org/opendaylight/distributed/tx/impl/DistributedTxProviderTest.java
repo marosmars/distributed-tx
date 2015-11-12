@@ -7,10 +7,7 @@
  */
 package org.opendaylight.distributed.tx.impl;
 
-import static org.mockito.Mockito.mock;
-
 import org.junit.Test;
-import org.opendaylight.controller.sal.binding.api.BindingAwareBroker;
 import org.opendaylight.distributed.tx.impl.spi.DTxProviderImpl;
 import org.opendaylight.distributed.tx.spi.TxProvider;
 
@@ -23,10 +20,6 @@ public class DistributedTxProviderTest {
     @Test
     public void testOnSessionInitiated() {
         DTxProviderImpl provider = new DTxProviderImpl(txProvider);
-
-        // ensure no exceptions
-        // currently this method is empty
-        provider.onSessionInitialized(mock(BindingAwareBroker.ProviderContext.class));
     }
 
     @Test

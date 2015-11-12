@@ -19,12 +19,29 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
         <module>
           <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx:impl">prefix:distributed-tx</type>
           <name>distributed-tx-default</name>
+          <tx-provider>
+            <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx:spi">prefix:tx-provider</type>
+            <name>mount-point-tx-provider</name>
+          </tx-provider>
+        </module>
+        <module>
+          <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx:spi:impl">prefix:mount-service-tx-provider</type>
+          <name>mount-point-tx-provider</name>
           <broker>
             <type xmlns:binding="urn:opendaylight:params:xml:ns:yang:controller:md:sal:binding">binding:binding-broker-osgi-registry</type>
             <name>binding-osgi-broker</name>
           </broker>
         </module>
       </modules>
+      <services xmlns="urn:opendaylight:params:xml:ns:yang:controller:config">
+        <service>
+          <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx:spi">prefix:tx-provider</type>
+          <instance>
+            <name>mount-point-tx-provider</name>
+            <provider>/modules/module[type='mount-service-tx-provider'][name='mount-point-tx-provider']</provider>
+          </instance>
+        </service>
+      </services>
     </data>
   </configuration>
 </snapshot>

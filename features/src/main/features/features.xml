@@ -16,10 +16,12 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
   <feature name='odl-distributed-tx-api' version='${project.version}' description='OpenDaylight :: distributed-tx :: api'>
     <feature version='${yangtools.version}'>odl-yangtools-models</feature>
     <bundle>mvn:org.opendaylight.distributed.tx/distributed-tx-api/${project.version}</bundle>
+    <bundle>mvn:org.opendaylight.distributed.tx/distributed-tx-spi/${project.version}</bundle>
   </feature>
   <feature name='odl-distributed-tx' version='${project.version}' description='OpenDaylight :: distributed-tx'>
     <feature version='${mdsal.version}'>odl-mdsal-broker</feature>
     <feature version='${project.version}'>odl-distributed-tx-api</feature>
+    <bundle>mvn:org.opendaylight.distributed.tx/distributed-tx-spi-impl/${project.version}</bundle>
     <bundle>mvn:org.opendaylight.distributed.tx/distributed-tx-impl/${project.version}</bundle>
     <configfile finalname="${configfile.directory}/distributed-tx.xml">mvn:org.opendaylight.distributed.tx/distributed-tx-impl/${project.version}/xml/config</configfile>
   </feature>

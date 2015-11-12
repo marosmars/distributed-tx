@@ -10,12 +10,9 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nonnull;
-import org.opendaylight.controller.md.sal.binding.api.MountPointService;
 import org.opendaylight.controller.md.sal.common.api.TransactionStatus;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
-import org.opendaylight.controller.sal.binding.api.BindingAwareBroker;
-import org.opendaylight.controller.sal.binding.api.BindingAwareConsumer;
 import org.opendaylight.distributed.tx.api.DTx;
 import org.opendaylight.distributed.tx.api.DTxException;
 import org.opendaylight.distributed.tx.api.DTxProvider;
@@ -26,11 +23,10 @@ import org.opendaylight.yangtools.yang.common.RpcResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DTxProviderImpl implements DTxProvider, AutoCloseable, BindingAwareConsumer {
+public class DTxProviderImpl implements DTxProvider, AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(DTxProviderImpl.class);
 
-    private volatile MountPointService mountPointService;
     private final Set<InstanceIdentifier<?>> devicesInUse = Sets.newHashSet();
     private final Map<Object, DtxReleaseWrapper> currentTxs = Maps.newHashMap();
     private final TxProvider txProvider;
@@ -41,7 +37,6 @@ public class DTxProviderImpl implements DTxProvider, AutoCloseable, BindingAware
 
     @Nonnull @Override public synchronized DTx newTx(@Nonnull final Set<InstanceIdentifier<?>> nodes)
         throws DTxException.DTxInitializationFailedException {
-        Preconditions.checkNotNull(mountPointService);
 
         final Sets.SetView<InstanceIdentifier<?>> lockedDevices = Sets.intersection(devicesInUse, nodes);
         if(!lockedDevices.isEmpty()) {
@@ -63,10 +58,6 @@ public class DTxProviderImpl implements DTxProvider, AutoCloseable, BindingAware
         }
 
         // TODO check if the collections are empty
-    }
-
-    @Override public void onSessionInitialized(final BindingAwareBroker.ConsumerContext consumerContext) {
-        mountPointService = consumerContext.getSALService(MountPointService.class);
     }
 
     private final class DtxReleaseWrapper implements DTx {

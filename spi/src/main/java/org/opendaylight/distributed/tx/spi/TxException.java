@@ -9,6 +9,10 @@ public class TxException extends RuntimeException {
         super(s, e);
     }
 
+    public TxException(final String s) {
+        super(s);
+    }
+
     /**
      * Generic per-node-tx initialization failure
      */
@@ -16,6 +20,10 @@ public class TxException extends RuntimeException {
 
         public TxInitiatizationFailedException(final String s, final RuntimeException e) {
             super(s, e);
+        }
+
+        public TxInitiatizationFailedException(final String s) {
+            super(s);
         }
     }
 

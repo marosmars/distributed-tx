@@ -19,7 +19,6 @@ import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFaile
 import org.opendaylight.distributed.tx.spi.CachedData;
 import org.opendaylight.distributed.tx.spi.TxCache;
 import org.opendaylight.distributed.tx.spi.TxException;
-import org.opendaylight.yangtools.yang.binding.DataContainer;
 import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 import org.opendaylight.yangtools.yang.common.RpcResult;
@@ -50,18 +49,18 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
     @Override public void delete(final LogicalDatastoreType logicalDatastoreType,
         final InstanceIdentifier<?> instanceIdentifier) {
 
-        final CheckedFuture<?, ReadFailedException> read = delegate
-            .read(logicalDatastoreType, instanceIdentifier);
+        @SuppressWarnings("unchecked")
+        final CheckedFuture<Optional<DataObject>, ReadFailedException> read = delegate
+            .read(logicalDatastoreType, (InstanceIdentifier<DataObject>) instanceIdentifier);
 
+        Futures.addCallback(read, new FutureCallback<Optional<DataObject>>() {
+            @Override public void onSuccess(final Optional<DataObject> result) {
 
-        Futures.addCallback(read, new FutureCallback<Object>() {
-            @Override public void onSuccess(final Object result) {
-
-                Optional<? extends DataObject> dataObjectOptional = (Optional<? extends DataObject>) result;
-                if (dataObjectOptional.isPresent()) {
-                    cache.add(new CachedData(instanceIdentifier, ((Optional<? extends DataObject>) result).get(), ModifyAction.DELETE));
+                if (result.isPresent()) {
+                    cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.DELETE));
                 } else {
-                    //TODO do i need to provide exception here.
+                    // Deleting something that wasnt there, rollback will ignore
+                    cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.DELETE));
                 }
 
                 try {
@@ -137,9 +136,12 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
 
     @Deprecated
     @Override public <T extends DataObject> void put(final LogicalDatastoreType logicalDatastoreType,
-        final InstanceIdentifier<T> instanceIdentifier, final T t, final boolean b) {
-        delegate.put(logicalDatastoreType, instanceIdentifier, t, b);
+        final InstanceIdentifier<T> instanceIdentifier, final T t, final boolean ensureParents) {
+        delegate.put(logicalDatastoreType, instanceIdentifier, t, ensureParents);
         // TODO ERUAN
+        // TODO How do we handle this ?
+        // Either ignore ensure parents and log warning that ensure parents is unsupported
+        // Or throw an exception (but that means rollback) unless we wont do auto-rollback on errors during edit
     }
 
     @Override public boolean cancel() {

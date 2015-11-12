@@ -4,7 +4,7 @@ module distributed-tx-impl {
     prefix "distributed-tx-impl";
 
     import config { prefix config; revision-date 2013-04-05; }
-    import opendaylight-md-sal-binding { prefix md-sal-binding; revision-date 2013-10-28;}
+    import "distributed-tx-spi" { prefix "distributed-tx-spi"; revision-date 2014-12-10;}
 
     description
         "Service definition for distributed-tx project";
@@ -22,11 +22,11 @@ module distributed-tx-impl {
     augment "/config:modules/config:module/config:configuration" {
         case distributed-tx {
             when "/config:modules/config:module/config:type = 'distributed-tx'";
-            container broker {
+            container tx-provider {
                 uses config:service-ref {
                     refine type {
                         mandatory true;
-                        config:required-identity md-sal-binding:binding-broker-osgi-registry;
+                        config:required-identity distributed-tx-spi:tx-provider;
                     }
                 }
             }
