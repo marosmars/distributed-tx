@@ -1,8 +1,15 @@
 package org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.distributed.tx.impl.rev141210;
 
 import org.opendaylight.distributed.tx.impl.spi.DTxProviderImpl;
+import org.opendaylight.distributed.tx.spi.TxProvider;
 
 public class DistributedTxModule extends org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.distributed.tx.impl.rev141210.AbstractDistributedTxModule {
+    private TxProvider txProvider;
+
+    public void addProvider(final TxProvider txProvider) {
+        this.txProvider = txProvider;
+    }
+
     public DistributedTxModule(org.opendaylight.controller.config.api.ModuleIdentifier identifier, org.opendaylight.controller.config.api.DependencyResolver dependencyResolver) {
         super(identifier, dependencyResolver);
     }
@@ -22,5 +29,4 @@ public class DistributedTxModule extends org.opendaylight.yang.gen.v1.urn.openda
         getBrokerDependency().registerConsumer(dTxProvider);
         return dTxProvider;
     }
-
 }

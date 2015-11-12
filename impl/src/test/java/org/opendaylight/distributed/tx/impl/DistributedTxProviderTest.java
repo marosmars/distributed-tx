@@ -12,8 +12,14 @@ import static org.mockito.Mockito.mock;
 import org.junit.Test;
 import org.opendaylight.controller.sal.binding.api.BindingAwareBroker;
 import org.opendaylight.distributed.tx.impl.spi.DTxProviderImpl;
+import org.opendaylight.distributed.tx.spi.TxProvider;
 
 public class DistributedTxProviderTest {
+    private TxProvider txProvider;
+
+    public void addProvider(final TxProvider txProvider) {
+        this.txProvider = txProvider;
+    }
     @Test
     public void testOnSessionInitiated() {
         DTxProviderImpl provider = new DTxProviderImpl(txProvider);

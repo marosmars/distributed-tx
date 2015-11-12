@@ -19,6 +19,7 @@ import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFaile
 import org.opendaylight.distributed.tx.spi.CachedData;
 import org.opendaylight.distributed.tx.spi.TxCache;
 import org.opendaylight.distributed.tx.spi.TxException;
+import org.opendaylight.yangtools.yang.binding.DataContainer;
 import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 import org.opendaylight.yangtools.yang.common.RpcResult;
@@ -48,19 +49,44 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
 
     @Override public void delete(final LogicalDatastoreType logicalDatastoreType,
         final InstanceIdentifier<?> instanceIdentifier) {
-        delegate.delete(logicalDatastoreType, instanceIdentifier);
+
+        final CheckedFuture<?, ReadFailedException> read = delegate
+            .read(logicalDatastoreType, instanceIdentifier);
+
+
+        Futures.addCallback(read, new FutureCallback<Object>() {
+            @Override public void onSuccess(final Object result) {
+
+                Optional<? extends DataObject> dataObjectOptional = (Optional<? extends DataObject>) result;
+                if (dataObjectOptional.isPresent()) {
+                    cache.add(new CachedData(instanceIdentifier, ((Optional<? extends DataObject>) result).get(), ModifyAction.DELETE));
+                } else {
+                    //TODO do i need to provide exception here.
+                }
+
+                try {
+                    delegate.delete(logicalDatastoreType, instanceIdentifier);
+                } catch (RuntimeException e) {
+                    // FAILURE of edit
+                    // TODO
+                    throw new TxException("Delete failed", e);
+                }
+            }
+
+            @Override public void onFailure(final Throwable t) {
+                // Mark as failed or notify distributed TX, since we cannot cache data, distributed TX needs to fail
+            }
+        });
     }
 
     @Override public <T extends DataObject> void merge(final LogicalDatastoreType logicalDatastoreType,
         final InstanceIdentifier<T> instanceIdentifier, final T t) {
-
         final CheckedFuture<Optional<T>, ReadFailedException> read = delegate
             .read(logicalDatastoreType, instanceIdentifier);
 
         Futures.addCallback(read, new FutureCallback<Optional<T>>() {
             @Override public void onSuccess(final Optional<T> result) {
                 cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.MERGE));
-
 
                 try {
                     delegate.merge(logicalDatastoreType, instanceIdentifier, t);
@@ -75,24 +101,45 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
                 // Mark as failed or notify distributed TX, since we cannot cache data, distributed TX needs to fail
             }
         });
-
-
     }
 
+    @Deprecated
     @Override public <T extends DataObject> void merge(final LogicalDatastoreType logicalDatastoreType,
         final InstanceIdentifier<T> instanceIdentifier, final T t, final boolean b) {
         delegate.merge(logicalDatastoreType, instanceIdentifier, t, b);
         // TODO how to handle ensure parents ? we dont have control over that here, so we probably have to cache the whole subtree
+        // Not support it.
     }
 
     @Override public <T extends DataObject> void put(final LogicalDatastoreType logicalDatastoreType,
         final InstanceIdentifier<T> instanceIdentifier, final T t) {
-        delegate.put(logicalDatastoreType, instanceIdentifier, t);
+        final CheckedFuture<Optional<T>, ReadFailedException> read = delegate
+                .read(logicalDatastoreType, instanceIdentifier);
+
+        Futures.addCallback(read, new FutureCallback<Optional<T>>() {
+            @Override public void onSuccess(final Optional<T> result) {
+                cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.REPLACE));
+
+                try {
+                    delegate.put(logicalDatastoreType, instanceIdentifier, t);
+                } catch (RuntimeException e) {
+                    // FAILURE of edit
+                    // TODO
+                    throw new TxException("Put failed", e);
+                }
+            }
+
+            @Override public void onFailure(final Throwable t) {
+                // Mark as failed or notify distributed TX, since we cannot cache data, distributed TX needs to fail
+            }
+        });
     }
 
+    @Deprecated
     @Override public <T extends DataObject> void put(final LogicalDatastoreType logicalDatastoreType,
         final InstanceIdentifier<T> instanceIdentifier, final T t, final boolean b) {
         delegate.put(logicalDatastoreType, instanceIdentifier, t, b);
+        // TODO ERUAN
     }
 
     @Override public boolean cancel() {
