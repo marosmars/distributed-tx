@@ -56,13 +56,12 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
 
         Futures.addCallback(read, new FutureCallback<Object>() {
             @Override public void onSuccess(final Object result) {
-                try {
-                    Optional<? extends DataObject> dataObjectOptional = (Optional<? extends DataObject>) result;
-                    if (dataObjectOptional.isPresent()) {
-                        cache.add(new CachedData(instanceIdentifier, ((Optional<? extends DataObject>) result).get(), ModifyAction.MERGE));
-                    }
-                } catch (ClassCastException | NullPointerException e ) {
-                    e.printStackTrace();
+
+                Optional<? extends DataObject> dataObjectOptional = (Optional<? extends DataObject>) result;
+                if (dataObjectOptional.isPresent()) {
+                    cache.add(new CachedData(instanceIdentifier, ((Optional<? extends DataObject>) result).get(), ModifyAction.DELETE));
+                } else {
+                    //TODO do i need to provide exception here.
                 }
 
                 try {
@@ -70,7 +69,7 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
                 } catch (RuntimeException e) {
                     // FAILURE of edit
                     // TODO
-                    throw new TxException("Merge failed", e);
+                    throw new TxException("Delete failed", e);
                 }
             }
 
