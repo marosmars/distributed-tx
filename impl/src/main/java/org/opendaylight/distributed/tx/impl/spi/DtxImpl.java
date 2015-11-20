@@ -56,7 +56,7 @@ public class DtxImpl implements DTx {
 
     @Override public void delete(final LogicalDatastoreType logicalDatastoreType,
         final InstanceIdentifier<?> instanceIdentifier, final InstanceIdentifier<?> nodeId)
-        throws DTxException.EditFailedException, DTxException.RollbackFailedException {
+        throws DTxException.EditFailedException {
 
         Preconditions.checkArgument(perNodeTransactions.containsKey(nodeId), "Unknown node: %s. Not in transaction", nodeId);
         final ReadWriteTransaction transaction = perNodeTransactions.get(nodeId);
@@ -70,10 +70,10 @@ public class DtxImpl implements DTx {
 
                 @Override public void onFailure(final Throwable t) {
                     LOG.warn("Distributed tx filed. Rollback FAILED. Device(s) state is unknown", t);
-                    // t should be rollback failed EX
-                    throw new DTxException.RollbackFailedException(e);
+                    // FIXME No Runtimeexception can be caught when rollback fails. Ignore
                 }
             });
+            throw new DTxException.EditFailedException("Delete operation failed at node" + nodeId);
         }
     }
 
@@ -111,7 +111,7 @@ public class DtxImpl implements DTx {
 
     @Override public <T extends DataObject> void merge(final LogicalDatastoreType logicalDatastoreType,
         final InstanceIdentifier<T> instanceIdentifier, final T t, final InstanceIdentifier<?> nodeId)
-        throws DTxException.EditFailedException, DTxException.RollbackFailedException{
+        throws DTxException.EditFailedException {
             Preconditions.checkArgument(perNodeTransactions.containsKey(nodeId), "Unknown node: %s. Not in transaction", nodeId);
             final ReadWriteTransaction transaction = perNodeTransactions.get(nodeId);
             try {
@@ -123,11 +123,11 @@ public class DtxImpl implements DTx {
                     }
 
                     @Override public void onFailure(final Throwable t) {
-                        LOG.warn("Distributed tx filed. Rollback FAILED. Device(s) state is unknown", t);
-                        // t should be rollback failed EX
-                        throw new DTxException.RollbackFailedException(e);
+                        LOG.warn("Distributed tx failed for merge. Rollback FAILED. Device(s) state is unknown", t);
+                        // FIXME No Runtimeexception can be caught when rollback fails. Ignore
                     }
                 });
+                throw new DTxException.EditFailedException("Put operation failed at node" + nodeId);
             }
     }
 
@@ -140,6 +140,7 @@ public class DtxImpl implements DTx {
     @Override public <T extends DataObject> void put(final LogicalDatastoreType logicalDatastoreType,
         final InstanceIdentifier<T> instanceIdentifier, final T t, final InstanceIdentifier<?> nodeId)
         throws DTxException.EditFailedException {
+        //FIXME Not thread-safe. Add concurrency protection
         Preconditions.checkArgument(perNodeTransactions.containsKey(nodeId), "Unknown node: %s. Not in transaction", nodeId);
         final ReadWriteTransaction transaction = perNodeTransactions.get(nodeId);
         try {
@@ -147,15 +148,16 @@ public class DtxImpl implements DTx {
         } catch (final RuntimeException e) {
             Futures.addCallback(this.rollbackUponOperationFaiure(perNodeTransactions, perNodeTransactions), new FutureCallback<Void>(){
                 @Override public void onSuccess(@Nullable final Void result) {
-                    LOG.info("Distributed tx failed for merge {}. Rollback was successful", instanceIdentifier);
+                    LOG.info("Distributed tx failed for put{}. Rollback was successful", instanceIdentifier);
                 }
 
                 @Override public void onFailure(final Throwable t) {
                     LOG.warn("Distributed tx filed. Rollback FAILED. Device(s) state is unknown", t);
-                    // t should be rollback failed EX
-                    throw new DTxException.RollbackFailedException(e);
+
+                    // FIXME No Runtimeexception can be caught when rollback fails. Ignore
                 }
             });
+            throw new DTxException.EditFailedException("Put operation failed at node" + nodeId);
         }
     }
 
