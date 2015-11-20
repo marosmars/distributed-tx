@@ -55,13 +55,7 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
 
         Futures.addCallback(read, new FutureCallback<Optional<DataObject>>() {
             @Override public void onSuccess(final Optional<DataObject> result) {
-
-                if (result.isPresent()) {
-                    cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.DELETE));
-                } else {
-                    // Deleting something that wasnt there, rollback will ignore
-                    cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.DELETE));
-                }
+                cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.DELETE));
 
                 try {
                     delegate.delete(logicalDatastoreType, instanceIdentifier);
@@ -118,13 +112,13 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
         Futures.addCallback(read, new FutureCallback<Optional<T>>() {
             @Override public void onSuccess(final Optional<T> result) {
                 cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.REPLACE));
-
                 try {
                     delegate.put(logicalDatastoreType, instanceIdentifier, t);
                 } catch (RuntimeException e) {
                     // FAILURE of edit
                     // TODO
                     throw new TxException("Put failed", e);
+
                 }
             }
 
