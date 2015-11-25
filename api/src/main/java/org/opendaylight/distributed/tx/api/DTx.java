@@ -3,6 +3,7 @@ package org.opendaylight.distributed.tx.api;
 import com.google.common.util.concurrent.CheckedFuture;
 import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
+import org.opendaylight.controller.md.sal.common.api.data.ReadFailedException;
 import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
 import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
@@ -79,4 +80,16 @@ public interface DTx extends WriteTransaction {
     @Override boolean cancel()
         throws DTxException.RollbackFailedException;
 
+    public <T extends DataObject> CheckedFuture<Void, ReadFailedException> mergeAndRollbackOnFailure(
+            final LogicalDatastoreType logicalDatastoreType,
+            final InstanceIdentifier<T> instanceIdentifier, final T t, final InstanceIdentifier<?> nodeId)
+            throws DTxException.EditFailedException ;
+
+    public <T extends DataObject> CheckedFuture<Void, ReadFailedException> putAndRollbackOnFailure(
+            final LogicalDatastoreType logicalDatastoreType,
+            final InstanceIdentifier<T> instanceIdentifier, final T t, final InstanceIdentifier<?> nodeId)
+            throws DTxException.EditFailedException ;
+
+    public CheckedFuture<Void, ReadFailedException> deleteAndRollbackOnFailure(LogicalDatastoreType logicalDatastoreType, InstanceIdentifier<?> instanceIdentifier,
+                InstanceIdentifier<?> nodeId) throws DTxException.EditFailedException, DTxException.RollbackFailedException;
 }

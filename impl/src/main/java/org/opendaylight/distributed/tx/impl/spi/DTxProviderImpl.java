@@ -12,6 +12,7 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 import org.opendaylight.controller.md.sal.common.api.TransactionStatus;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
+import org.opendaylight.controller.md.sal.common.api.data.ReadFailedException;
 import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
 import org.opendaylight.distributed.tx.api.DTx;
 import org.opendaylight.distributed.tx.api.DTxException;
@@ -81,6 +82,21 @@ public class DTxProviderImpl implements DTxProvider, AutoCloseable {
             final boolean cancel = delegate.cancel();
             releaseNodes();
             return cancel;
+        }
+
+        @Override
+        public <T extends DataObject> CheckedFuture<Void, ReadFailedException> mergeAndRollbackOnFailure(LogicalDatastoreType logicalDatastoreType, InstanceIdentifier<T> instanceIdentifier, T t, InstanceIdentifier<?> nodeId) throws DTxException.EditFailedException {
+            return delegate.mergeAndRollbackOnFailure(logicalDatastoreType, instanceIdentifier, t, nodeId);
+        }
+
+        @Override
+        public <T extends DataObject> CheckedFuture<Void, ReadFailedException> putAndRollbackOnFailure(LogicalDatastoreType logicalDatastoreType, InstanceIdentifier<T> instanceIdentifier, T t, InstanceIdentifier<?> nodeId) throws DTxException.EditFailedException {
+            return delegate.putAndRollbackOnFailure(logicalDatastoreType, instanceIdentifier, t, nodeId);
+        }
+
+        @Override
+        public CheckedFuture<Void, ReadFailedException> deleteAndRollbackOnFailure(LogicalDatastoreType logicalDatastoreType, InstanceIdentifier<?> instanceIdentifier, InstanceIdentifier<?> nodeId) throws DTxException.EditFailedException, DTxException.RollbackFailedException {
+            return delegate.deleteAndRollbackOnFailure(logicalDatastoreType, instanceIdentifier, nodeId);
         }
 
         @Override public void delete(final LogicalDatastoreType logicalDatastoreType,

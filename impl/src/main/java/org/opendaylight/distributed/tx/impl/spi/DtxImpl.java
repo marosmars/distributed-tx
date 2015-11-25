@@ -18,13 +18,11 @@ import javax.annotation.Nullable;
 import org.opendaylight.controller.md.sal.binding.api.ReadWriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.TransactionStatus;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
+import org.opendaylight.controller.md.sal.common.api.data.ReadFailedException;
 import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
 import org.opendaylight.distributed.tx.api.DTx;
 import org.opendaylight.distributed.tx.api.DTxException;
-import org.opendaylight.distributed.tx.spi.Rollback;
-import org.opendaylight.distributed.tx.spi.TxCache;
-import org.opendaylight.distributed.tx.spi.TxException;
-import org.opendaylight.distributed.tx.spi.TxProvider;
+import org.opendaylight.distributed.tx.spi.*;
 import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 import org.opendaylight.yangtools.yang.common.RpcResult;
@@ -397,4 +395,32 @@ public class DtxImpl implements DTx {
             return new PerNodeTxState(true, readWriteTransaction);
         }
     }
+
+    public <T extends DataObject> CheckedFuture<Void, ReadFailedException> mergeAndRollbackOnFailure(
+        final LogicalDatastoreType logicalDatastoreType,
+        final InstanceIdentifier<T> instanceIdentifier, final T t, final InstanceIdentifier<?> nodeId)
+        throws DTxException.EditFailedException {
+            Preconditions.checkArgument(perNodeTransactions.containsKey(nodeId), "Unknown node: %s. Not in transaction", nodeId);
+            final DTXReadWriteTransaction transaction = perNodeTransactions.get(nodeId);
+            return transaction.asyncMerge(logicalDatastoreType, instanceIdentifier, t);
+    }
+
+    public <T extends DataObject> CheckedFuture<Void, ReadFailedException> putAndRollbackOnFailure(
+            final LogicalDatastoreType logicalDatastoreType,
+            final InstanceIdentifier<T> instanceIdentifier, final T t, final InstanceIdentifier<?> nodeId)
+            throws DTxException.EditFailedException {
+            Preconditions.checkArgument(perNodeTransactions.containsKey(nodeId), "Unknown node: %s. Not in transaction", nodeId);
+            final DTXReadWriteTransaction transaction = perNodeTransactions.get(nodeId);
+            return transaction.asyncPut(logicalDatastoreType, instanceIdentifier, t);
+
+    }
+    public CheckedFuture<Void, ReadFailedException> deleteAndRollbackOnFailure(
+        final LogicalDatastoreType logicalDatastoreType,
+        final InstanceIdentifier<?> instanceIdentifier, final InstanceIdentifier<?> nodeId)
+        throws DTxException.EditFailedException {
+        Preconditions.checkArgument(perNodeTransactions.containsKey(nodeId), "Unknown node: %s. Not in transaction", nodeId);
+        final DTXReadWriteTransaction transaction = perNodeTransactions.get(nodeId);
+        return transaction.asyncDelete(logicalDatastoreType, instanceIdentifier);
+    }
 }
+

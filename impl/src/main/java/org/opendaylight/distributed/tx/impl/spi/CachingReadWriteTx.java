@@ -1,30 +1,33 @@
 package org.opendaylight.distributed.tx.impl.spi;
 
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.util.concurrent.CheckedFuture;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.*;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import org.opendaylight.controller.md.sal.binding.api.ReadWriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.TransactionStatus;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.md.sal.common.api.data.ReadFailedException;
 import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
 import org.opendaylight.distributed.tx.spi.CachedData;
+import org.opendaylight.distributed.tx.spi.DTXReadWriteTransaction;
 import org.opendaylight.distributed.tx.spi.TxCache;
 import org.opendaylight.distributed.tx.spi.TxException;
 import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 import org.opendaylight.yangtools.yang.common.RpcResult;
 import org.opendaylight.yangtools.yang.data.api.ModifyAction;
+import com.google.common.util.concurrent.SettableFuture;
 
-public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closeable {
+public class CachingReadWriteTx implements TxCache, DTXReadWriteTransaction, Closeable {
 
     private final ReadWriteTransaction delegate;
     public final Deque<CachedData> cache = new ConcurrentLinkedDeque<>();
@@ -41,7 +44,6 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
         final LogicalDatastoreType logicalDatastoreType, final InstanceIdentifier<T> instanceIdentifier) {
         return delegate.read(logicalDatastoreType, instanceIdentifier);
     }
-
     @Override public Object getIdentifier() {
         return delegate.getIdentifier();
     }
@@ -71,6 +73,41 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
             }
         });
     }
+    public CheckedFuture<Void, ReadFailedException> asyncDelete(final LogicalDatastoreType logicalDatastoreType,
+                                      final InstanceIdentifier<?> instanceIdentifier) {
+
+        @SuppressWarnings("unchecked")
+        final CheckedFuture<Optional<DataObject>, ReadFailedException> readFuture = delegate
+                .read(logicalDatastoreType, (InstanceIdentifier<DataObject>) instanceIdentifier);
+
+        final SettableFuture<Void> retFuture = SettableFuture.create();
+
+        Futures.addCallback(readFuture, new FutureCallback<Optional<DataObject>>() {
+            @Override public void onSuccess(final Optional<DataObject> result) {
+                cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.DELETE));
+
+                try {
+                    delegate.delete(logicalDatastoreType, instanceIdentifier);
+                } catch (RuntimeException e) {
+                    retFuture.setException(e);
+                }
+                retFuture.set(null);
+            }
+
+            @Override public void onFailure(final Throwable t) {
+                retFuture.setException(new ReadFailedException(t.getMessage()));
+                retFuture.set(null);
+            }
+        });
+
+        return Futures.makeChecked(retFuture, new Function<Exception, ReadFailedException>() {
+            @Nullable
+            @Override
+            public ReadFailedException apply(@Nullable Exception e) {
+                return new ReadFailedException(e.getMessage());
+            }
+        });
+    }
 
     @Override public <T extends DataObject> void merge(final LogicalDatastoreType logicalDatastoreType,
         final InstanceIdentifier<T> instanceIdentifier, final T t) {
@@ -92,6 +129,40 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
 
             @Override public void onFailure(final Throwable t) {
                 // Mark as failed or notify distributed TX, since we cannot cache data, distributed TX needs to fail
+            }
+        });
+    }
+
+    public <T extends DataObject> CheckedFuture<Void, ReadFailedException>asyncMerge(final LogicalDatastoreType logicalDatastoreType,
+                                                       final InstanceIdentifier<T> instanceIdentifier, final T t) {
+        final CheckedFuture<Optional<T>, ReadFailedException> readFuture = delegate
+                .read(logicalDatastoreType, instanceIdentifier);
+
+        final SettableFuture<Void> retFuture = SettableFuture.create();
+
+        Futures.addCallback(readFuture, new FutureCallback<Optional<T>>() {
+            @Override public void onSuccess(final Optional<T> result) {
+                cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.MERGE));
+
+                try {
+                    delegate.merge(logicalDatastoreType, instanceIdentifier, t);
+                } catch (RuntimeException e) {
+                    retFuture.setException(e);
+                }
+                retFuture.set(null);
+            }
+
+            @Override public void onFailure(final Throwable t) {
+                retFuture.setException(new ReadFailedException(t.getMessage()));
+                retFuture.set(null);
+            }
+        });
+
+        return Futures.makeChecked(retFuture, new Function<Exception, ReadFailedException>() {
+            @Nullable
+            @Override
+            public ReadFailedException apply(@Nullable Exception e) {
+                return new ReadFailedException(e.getMessage());
             }
         });
     }
@@ -124,6 +195,39 @@ public class CachingReadWriteTx implements TxCache, ReadWriteTransaction, Closea
 
             @Override public void onFailure(final Throwable t) {
                 // Mark as failed or notify distributed TX, since we cannot cache data, distributed TX needs to fail
+            }
+        });
+    }
+
+    public <T extends DataObject> CheckedFuture<Void, ReadFailedException> asyncPut(final LogicalDatastoreType logicalDatastoreType,
+                                                     final InstanceIdentifier<T> instanceIdentifier, final T t) {
+        final CheckedFuture<Optional<T>, ReadFailedException> read = delegate
+                .read(logicalDatastoreType, instanceIdentifier);
+
+        final SettableFuture<Void> retFuture = SettableFuture.create();
+
+        Futures.addCallback(read, new FutureCallback<Optional<T>>() {
+            @Override public void onSuccess(final Optional<T> result) {
+                cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.REPLACE));
+                try {
+                    delegate.put(logicalDatastoreType, instanceIdentifier, t);
+                } catch (RuntimeException e) {
+                    retFuture.setException(e);
+                }
+                retFuture.set(null);
+            }
+
+            @Override public void onFailure(final Throwable t) {
+                retFuture.setException(new ReadFailedException(t.getMessage()));
+                retFuture.set(null);
+            }
+        });
+
+        return Futures.makeChecked(retFuture, new Function<Exception, ReadFailedException>() {
+            @Nullable
+            @Override
+            public ReadFailedException apply(@Nullable Exception e) {
+                return new ReadFailedException(e.getMessage());
             }
         });
     }
