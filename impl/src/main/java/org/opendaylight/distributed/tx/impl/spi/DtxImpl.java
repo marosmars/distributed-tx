@@ -51,28 +51,14 @@ public class DtxImpl implements DTx {
             }
         });
     }
-
+    /*  Best effort delete */
     @Override public void delete(final LogicalDatastoreType logicalDatastoreType,
         final InstanceIdentifier<?> instanceIdentifier, final InstanceIdentifier<?> nodeId)
         throws DTxException.EditFailedException {
 
         Preconditions.checkArgument(perNodeTransactions.containsKey(nodeId), "Unknown node: %s. Not in transaction", nodeId);
         final ReadWriteTransaction transaction = perNodeTransactions.get(nodeId);
-        try {
-            transaction.delete(logicalDatastoreType, instanceIdentifier);
-        } catch (final RuntimeException e) {
-            Futures.addCallback(this.rollbackUponOperationFaiure(perNodeTransactions, perNodeTransactions), new FutureCallback<Void>(){
-                @Override public void onSuccess(@Nullable final Void result) {
-                    LOG.info("Distributed tx failed for delete {}. Rollback was successful", instanceIdentifier);
-                }
-
-                @Override public void onFailure(final Throwable t) {
-                    LOG.warn("Distributed tx filed. Rollback FAILED. Device(s) state is unknown", t);
-                    // FIXME No Runtimeexception can be caught when rollback fails. Ignore
-                }
-            });
-            throw new DTxException.EditFailedException("Delete operation failed at node" + nodeId);
-        }
+        transaction.delete(logicalDatastoreType, instanceIdentifier);
     }
 
     @Override public void delete(final LogicalDatastoreType logicalDatastoreType,
@@ -112,21 +98,7 @@ public class DtxImpl implements DTx {
         throws DTxException.EditFailedException {
             Preconditions.checkArgument(perNodeTransactions.containsKey(nodeId), "Unknown node: %s. Not in transaction", nodeId);
             final ReadWriteTransaction transaction = perNodeTransactions.get(nodeId);
-            try {
-                transaction.merge(logicalDatastoreType, instanceIdentifier, t);
-            } catch (final RuntimeException e) {
-                Futures.addCallback(this.rollbackUponOperationFaiure(perNodeTransactions, perNodeTransactions), new FutureCallback<Void>(){
-                    @Override public void onSuccess(@Nullable final Void result) {
-                        LOG.info("Distributed tx failed for merge {}. Rollback was successful", instanceIdentifier);
-                    }
-
-                    @Override public void onFailure(final Throwable t) {
-                        LOG.warn("Distributed tx failed for merge. Rollback FAILED. Device(s) state is unknown", t);
-                        // FIXME No Runtimeexception can be caught when rollback fails. Ignore
-                    }
-                });
-                throw new DTxException.EditFailedException("Put operation failed at node" + nodeId);
-            }
+            transaction.merge(logicalDatastoreType, instanceIdentifier, t);
     }
 
     @Override public <T extends DataObject> void merge(final LogicalDatastoreType logicalDatastoreType,
@@ -141,22 +113,7 @@ public class DtxImpl implements DTx {
         //FIXME Not thread-safe. Add concurrency protection
         Preconditions.checkArgument(perNodeTransactions.containsKey(nodeId), "Unknown node: %s. Not in transaction", nodeId);
         final ReadWriteTransaction transaction = perNodeTransactions.get(nodeId);
-        try {
-            transaction.put(logicalDatastoreType, instanceIdentifier, t);
-        } catch (final RuntimeException e) {
-            Futures.addCallback(this.rollbackUponOperationFaiure(perNodeTransactions, perNodeTransactions), new FutureCallback<Void>(){
-                @Override public void onSuccess(@Nullable final Void result) {
-                    LOG.info("Distributed tx failed for put{}. Rollback was successful", instanceIdentifier);
-                }
-
-                @Override public void onFailure(final Throwable t) {
-                    LOG.warn("Distributed tx filed. Rollback FAILED. Device(s) state is unknown", t);
-
-                    // FIXME No Runtimeexception can be caught when rollback fails. Ignore
-                }
-            });
-            throw new DTxException.EditFailedException("Put operation failed at node" + nodeId);
-        }
+        transaction.put(logicalDatastoreType, instanceIdentifier, t);
     }
 
     @Override public <T extends DataObject> void put(final LogicalDatastoreType logicalDatastoreType,
@@ -188,7 +145,7 @@ public class DtxImpl implements DTx {
     /**
      * Perform submit rollback with the caches and empty rollback transactions for every node
      */
-    private CheckedFuture<Void, DTxException.RollbackFailedException> rollback(
+    private CheckedFuture<Void, DTxException.RollbackFailedException> rollbackUponCommitFailure(
         final Map<InstanceIdentifier<?>, ? extends TxCache> perNodeTransactions,
         final Map<InstanceIdentifier<?>, PerNodeTxState> commitStatus) {
         // TODO Extract into a Rollback factory
@@ -206,8 +163,8 @@ public class DtxImpl implements DTx {
             }
         });
     }
-    private CheckedFuture<Void, DTxException.RollbackFailedException> rollbackUponOperationFaiure(
-            final Map<InstanceIdentifier<?>, ? extends TxCache> perNodeCache,  final Map<InstanceIdentifier<?>, ? extends ReadWriteTransaction> perNodeTx){
+    private CheckedFuture<Void, DTxException.RollbackFailedException> rollbackUponOperationFailure(
+            final Map<InstanceIdentifier<?>, ? extends TxCache> perNodeCache){
         Rollback rollback = new RollbackImpl();
         final ListenableFuture<Void> rollbackFuture= rollback.rollback(perNodeCache,perNodeTransactions);
 
@@ -311,7 +268,7 @@ public class DtxImpl implements DTx {
                 }
 
             } catch (final DTxException.SubmitFailedException e) {
-                Futures.addCallback(rollback(perNodeTransactions, commitStatus), new FutureCallback<Void>() {
+                Futures.addCallback(rollbackUponCommitFailure(perNodeTransactions, commitStatus), new FutureCallback<Void>() {
 
                     @Override public void onSuccess(@Nullable final Void result) {
                         LOG.info("Distributed tx failed for {}. Rollback was successful", perNodeTx.getKey());
@@ -402,7 +359,46 @@ public class DtxImpl implements DTx {
         throws DTxException.EditFailedException {
             Preconditions.checkArgument(perNodeTransactions.containsKey(nodeId), "Unknown node: %s. Not in transaction", nodeId);
             final DTXReadWriteTransaction transaction = perNodeTransactions.get(nodeId);
-            return transaction.asyncMerge(logicalDatastoreType, instanceIdentifier, t);
+            CheckedFuture<Void, ReadFailedException> mergeFuture =  transaction.asyncMerge(logicalDatastoreType, instanceIdentifier, t);
+
+            final SettableFuture<Void> retFuture = SettableFuture.create();
+
+            Futures.addCallback(mergeFuture, new FutureCallback<Void>() {
+                @Override
+                public void onSuccess(@Nullable Void aVoid) {
+                    retFuture.set(null);
+                }
+
+
+                @Override
+                public void onFailure(Throwable throwable) {
+
+                    retFuture.setException(throwable);
+
+                    CheckedFuture<Void, DTxException.RollbackFailedException> rollExcept =  rollback();
+
+                    Futures.addCallback(rollExcept, new FutureCallback<Void>() {
+                        @Override
+                        public void onSuccess(@Nullable Void aVoid) {
+                            retFuture.set(null);
+                        }
+
+                        @Override
+                        public void onFailure(Throwable throwable) {
+                            retFuture.setException(throwable);
+                            retFuture.set(null);
+                        }
+                    });
+                }
+            });
+
+        return Futures.makeChecked(retFuture, new Function<Exception, ReadFailedException>() {
+            @Nullable
+            @Override
+            public ReadFailedException apply(@Nullable Exception e) {
+                return new ReadFailedException(e.getMessage());
+            }
+        });
     }
 
     public <T extends DataObject> CheckedFuture<Void, ReadFailedException> putAndRollbackOnFailure(
@@ -411,8 +407,46 @@ public class DtxImpl implements DTx {
             throws DTxException.EditFailedException {
             Preconditions.checkArgument(perNodeTransactions.containsKey(nodeId), "Unknown node: %s. Not in transaction", nodeId);
             final DTXReadWriteTransaction transaction = perNodeTransactions.get(nodeId);
-            return transaction.asyncPut(logicalDatastoreType, instanceIdentifier, t);
+            CheckedFuture<Void, ReadFailedException> putFuture =  transaction.asyncPut(logicalDatastoreType, instanceIdentifier, t);
 
+            final SettableFuture<Void> retFuture = SettableFuture.create();
+
+            Futures.addCallback(putFuture, new FutureCallback<Void>() {
+                @Override
+                public void onSuccess(@Nullable Void aVoid) {
+                        retFuture.set(null);
+                }
+
+
+            @Override
+            public void onFailure(Throwable throwable) {
+
+                retFuture.setException(throwable);
+
+                CheckedFuture<Void, DTxException.RollbackFailedException> rollExcept =  rollback();
+
+                Futures.addCallback(rollExcept, new FutureCallback<Void>() {
+                    @Override
+                    public void onSuccess(@Nullable Void aVoid) {
+                        retFuture.set(null);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        retFuture.setException(throwable);
+                        retFuture.set(null);
+                    }
+                });
+            }
+        });
+
+        return Futures.makeChecked(retFuture, new Function<Exception, ReadFailedException>() {
+            @Nullable
+            @Override
+            public ReadFailedException apply(@Nullable Exception e) {
+                return new ReadFailedException(e.getMessage());
+            }
+        });
     }
     public CheckedFuture<Void, ReadFailedException> deleteAndRollbackOnFailure(
         final LogicalDatastoreType logicalDatastoreType,
@@ -420,7 +454,50 @@ public class DtxImpl implements DTx {
         throws DTxException.EditFailedException {
         Preconditions.checkArgument(perNodeTransactions.containsKey(nodeId), "Unknown node: %s. Not in transaction", nodeId);
         final DTXReadWriteTransaction transaction = perNodeTransactions.get(nodeId);
-        return transaction.asyncDelete(logicalDatastoreType, instanceIdentifier);
+        CheckedFuture<Void, ReadFailedException> deleteFuture = transaction.asyncDelete(logicalDatastoreType, instanceIdentifier);
+
+        final SettableFuture<Void> retFuture = SettableFuture.create();
+
+        Futures.addCallback(deleteFuture, new FutureCallback<Void>() {
+            @Override
+            public void onSuccess(@Nullable Void aVoid) {
+                retFuture.set(null);
+            }
+
+
+            @Override
+            public void onFailure(Throwable throwable) {
+
+                retFuture.setException(throwable);
+
+                CheckedFuture<Void, DTxException.RollbackFailedException> rollExcept =  rollback();
+
+                Futures.addCallback(rollExcept, new FutureCallback<Void>() {
+                    @Override
+                    public void onSuccess(@Nullable Void aVoid) {
+                        retFuture.set(null);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        retFuture.setException(throwable);
+                        retFuture.set(null);
+                    }
+                });
+            }
+        });
+
+        return Futures.makeChecked(retFuture, new Function<Exception, ReadFailedException>() {
+            @Nullable
+            @Override
+            public ReadFailedException apply(@Nullable Exception e) {
+                return new ReadFailedException(e.getMessage());
+            }
+        });
+    }
+
+    public CheckedFuture<Void, DTxException.RollbackFailedException>  rollback(){
+        return this.rollbackUponOperationFailure(this.perNodeTransactions);
     }
 }
 

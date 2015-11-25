@@ -181,5 +181,7 @@ public class DTxProviderImpl implements DTxProvider, AutoCloseable {
         @Override public Object getIdentifier() {
             return delegate.getIdentifier();
         }
+        @Override
+        public CheckedFuture<Void, DTxException.RollbackFailedException> rollback(){return delegate.rollback();};
     }
 }

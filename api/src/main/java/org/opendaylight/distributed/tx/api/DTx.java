@@ -80,16 +80,18 @@ public interface DTx extends WriteTransaction {
     @Override boolean cancel()
         throws DTxException.RollbackFailedException;
 
-    public <T extends DataObject> CheckedFuture<Void, ReadFailedException> mergeAndRollbackOnFailure(
+    <T extends DataObject> CheckedFuture<Void, ReadFailedException> mergeAndRollbackOnFailure(
             final LogicalDatastoreType logicalDatastoreType,
             final InstanceIdentifier<T> instanceIdentifier, final T t, final InstanceIdentifier<?> nodeId)
             throws DTxException.EditFailedException ;
 
-    public <T extends DataObject> CheckedFuture<Void, ReadFailedException> putAndRollbackOnFailure(
+    <T extends DataObject> CheckedFuture<Void, ReadFailedException> putAndRollbackOnFailure(
             final LogicalDatastoreType logicalDatastoreType,
             final InstanceIdentifier<T> instanceIdentifier, final T t, final InstanceIdentifier<?> nodeId)
             throws DTxException.EditFailedException ;
 
-    public CheckedFuture<Void, ReadFailedException> deleteAndRollbackOnFailure(LogicalDatastoreType logicalDatastoreType, InstanceIdentifier<?> instanceIdentifier,
+    CheckedFuture<Void, ReadFailedException> deleteAndRollbackOnFailure(LogicalDatastoreType logicalDatastoreType, InstanceIdentifier<?> instanceIdentifier,
                 InstanceIdentifier<?> nodeId) throws DTxException.EditFailedException, DTxException.RollbackFailedException;
+
+    CheckedFuture<Void, DTxException.RollbackFailedException> rollback();
 }
