@@ -82,16 +82,16 @@ public interface DTx extends WriteTransaction {
 
     <T extends DataObject> CheckedFuture<Void, ReadFailedException> mergeAndRollbackOnFailure(
             final LogicalDatastoreType logicalDatastoreType,
-            final InstanceIdentifier<T> instanceIdentifier, final T t, final InstanceIdentifier<?> nodeId)
-            throws DTxException.EditFailedException ;
+            final InstanceIdentifier<T> instanceIdentifier, final T t, final InstanceIdentifier<?> nodeId);
 
     <T extends DataObject> CheckedFuture<Void, ReadFailedException> putAndRollbackOnFailure(
             final LogicalDatastoreType logicalDatastoreType,
-            final InstanceIdentifier<T> instanceIdentifier, final T t, final InstanceIdentifier<?> nodeId)
-            throws DTxException.EditFailedException ;
+            final InstanceIdentifier<T> instanceIdentifier, final T t, final InstanceIdentifier<?> nodeId);
 
-    CheckedFuture<Void, ReadFailedException> deleteAndRollbackOnFailure(LogicalDatastoreType logicalDatastoreType, InstanceIdentifier<?> instanceIdentifier,
-                InstanceIdentifier<?> nodeId) throws DTxException.EditFailedException, DTxException.RollbackFailedException;
+    CheckedFuture<Void, ReadFailedException> deleteAndRollbackOnFailure(
+            final LogicalDatastoreType logicalDatastoreType,
+            final InstanceIdentifier<?> instanceIdentifier,
+            InstanceIdentifier<?> nodeId);
 
     CheckedFuture<Void, DTxException.RollbackFailedException> rollback();
 }
