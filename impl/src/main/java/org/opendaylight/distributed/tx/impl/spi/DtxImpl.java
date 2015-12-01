@@ -379,7 +379,7 @@ public class DtxImpl implements DTx {
                     Futures.addCallback(rollExcept, new FutureCallback<Void>() {
                         @Override
                         public void onSuccess(@Nullable Void aVoid) {
-                            retFuture.set(null);
+                            retFuture.setException(new ReadFailedException("Failed to merge but succeed to rollback"));
                         }
 
                         @Override
@@ -425,7 +425,7 @@ public class DtxImpl implements DTx {
                 Futures.addCallback(rollExcept, new FutureCallback<Void>() {
                     @Override
                     public void onSuccess(@Nullable Void aVoid) {
-                        retFuture.set(null);
+                        retFuture.setException(new ReadFailedException("Failed to put but succeed to rollback"));
                     }
 
                     @Override
@@ -469,7 +469,7 @@ public class DtxImpl implements DTx {
                 Futures.addCallback(rollExcept, new FutureCallback<Void>() {
                     @Override
                     public void onSuccess(@Nullable Void aVoid) {
-                        retFuture.set(null);
+                        retFuture.setException(new ReadFailedException("Failed to delete but succeed to rollback"));
                     }
 
                     @Override
