@@ -2,6 +2,7 @@ package org.opendaylight.distributed.tx.impl;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.base.Supplier;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -17,6 +18,11 @@ import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 import org.opendaylight.yangtools.yang.common.RpcResult;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Set;
+
+
 public class DTXTestTransaction implements ReadWriteTransaction {
     boolean readException = false;
 
@@ -24,7 +30,34 @@ public class DTXTestTransaction implements ReadWriteTransaction {
         this.readException = ept;
     }
     @Override
-    public <T extends DataObject> CheckedFuture<Optional<T>, ReadFailedException> read(LogicalDatastoreType logicalDatastoreType, InstanceIdentifier<T> instanceIdentifier) {
+    public <T extends DataObject> CheckedFuture<Optional<T>, ReadFailedException> read(LogicalDatastoreType logicalDatastoreType, final InstanceIdentifier<T> instanceIdentifier) {
+        Class<T> clazz = null;
+        Constructor<T> ctor = null;
+        try {
+             clazz = (Class<T>)Class.forName("org.opendaylight.distributed.tx.impl.DTXTestTransaction$myDataObj");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        if(clazz != null)
+            try {
+                ctor = clazz.getConstructor();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            }
+
+        //Object obj = null;
+        T obj = null;
+        try {
+            obj = ctor.newInstance();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+
+        final Optional<T> retOpt = Optional.of(obj);
 
         final SettableFuture<Optional<T>> retFuture = SettableFuture.create();
         Runnable readResult = new Runnable() {
@@ -37,9 +70,9 @@ public class DTXTestTransaction implements ReadWriteTransaction {
                 }
 
                 if (!readException){
-
                     //fixme should set the instance of T
-                    retFuture.set(null);
+                    // retFuture.set(null);
+                    retFuture.set(retOpt);
                 }else
                     retFuture.setException(new Throwable("simulated error"));
                 retFuture.notifyAll();
@@ -103,6 +136,7 @@ public class DTXTestTransaction implements ReadWriteTransaction {
     public Object getIdentifier() {
         return null;
     }
+
     public static class myDataObj implements DataObject{
         @Override
         public Class<? extends DataContainer> getImplementedInterface() {

@@ -36,7 +36,7 @@ public class CachingReadWriteTxTest {
     @Test
     public void testAsyncPut() throws InterruptedException {
         /* FIXME The case should test right read after read in DTXTestTransaction is fixed. */
-        testTx.setReadException(true);
+        // testTx.setReadException(true);
 
         CachingReadWriteTx cacheRWTx = new CachingReadWriteTx(testTx);
 
@@ -45,29 +45,32 @@ public class CachingReadWriteTxTest {
         for(int i = 0; i < numberOfObjs; i++){
             CheckedFuture<Void, ReadFailedException> cf =  cacheRWTx.asyncPut(LogicalDatastoreType.OPERATIONAL, InstanceIdentifier.create(DTXTestTransaction.myDataObj.class), new DTXTestTransaction.myDataObj());
 
-            while(!cf.isDone() ) {
-                Thread.sleep(10);
-            }
+            Thread.sleep(15);
+            Assert.assertEquals(cf.isDone(), true);
         }
-
-        Assert.assertEquals("size is wrong", cacheRWTx.getSizeOfCache(), 0);
+        System.out.println("size is "+cacheRWTx.getSizeOfCache());
+        Assert.assertEquals("size is wrong", cacheRWTx.getSizeOfCache(), numberOfObjs);
     }
 
     @Test
-    public void testAsyncMerge(){
+    public void testAsyncMerge() throws InterruptedException {
         CachingReadWriteTx cacheRWTx = new CachingReadWriteTx(new DTXTestTransaction());
 
         int numberOfObjs = 10;
 
         for(int i = 0; i < numberOfObjs; i++){
             CheckedFuture<Void, ReadFailedException> cf =  cacheRWTx.asyncMerge(LogicalDatastoreType.OPERATIONAL, InstanceIdentifier.create(DTXTestTransaction.myDataObj.class), new DTXTestTransaction.myDataObj());
+
+            Thread.sleep(15);
+            Assert.assertEquals(cf.isDone(), true);
         }
 
-        Assert.assertEquals("size is wrong", cacheRWTx.getSizeOfCache(), 0);
+        System.out.println("size is "+cacheRWTx.getSizeOfCache());
+        Assert.assertEquals("size is wrong", cacheRWTx.getSizeOfCache(), 10);
     }
 
     @Test
-    public  void testAsyncDelete(){
+    public  void testAsyncDelete() throws InterruptedException {
         CachingReadWriteTx cacheRWTx = new CachingReadWriteTx(new DTXTestTransaction());
 
         int numberOfObjs = 10;
@@ -80,9 +83,11 @@ public class CachingReadWriteTxTest {
 
         for(int i = 0; i < numberOfDeleted; i++){
             CheckedFuture<Void, ReadFailedException> f = cacheRWTx.asyncDelete(LogicalDatastoreType.OPERATIONAL, InstanceIdentifier.create(DTXTestTransaction.myDataObj.class));
+            Thread.sleep(15);
+            Assert.assertEquals(f.isDone(), true);
         }
 
-        Assert.assertEquals("size is wrong", cacheRWTx.getSizeOfCache(), 0);
+        Assert.assertEquals("size is wrong", cacheRWTx.getSizeOfCache(), numberOfObjs + numberOfDeleted);
     }
 
     @Test
