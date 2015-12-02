@@ -153,8 +153,6 @@ public class CachingReadWriteTx implements TxCache, DTXReadWriteTransaction, Clo
         final CheckedFuture<Optional<T>, ReadFailedException> read = delegate
                 .read(logicalDatastoreType, instanceIdentifier);
 
-        boolean isd = read.isDone();
-
         final SettableFuture<Void> retFuture = SettableFuture.create();
 
         Futures.addCallback(read, new FutureCallback<Optional<T>>() {
