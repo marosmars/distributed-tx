@@ -53,6 +53,11 @@ public class CachingReadWriteTx implements TxCache, DTXReadWriteTransaction, Clo
         /*  This is best effort API so that no exception will be thrown. */
         this.asyncDelete(logicalDatastoreType, instanceIdentifier);
     }
+
+    public int getSizeOfCache(){
+        return this.cache.size();
+    }
+
     public CheckedFuture<Void, ReadFailedException> asyncDelete(final LogicalDatastoreType logicalDatastoreType,
                                       final InstanceIdentifier<?> instanceIdentifier) {
 
@@ -147,6 +152,8 @@ public class CachingReadWriteTx implements TxCache, DTXReadWriteTransaction, Clo
                                                      final InstanceIdentifier<T> instanceIdentifier, final T t) {
         final CheckedFuture<Optional<T>, ReadFailedException> read = delegate
                 .read(logicalDatastoreType, instanceIdentifier);
+
+        boolean isd = read.isDone();
 
         final SettableFuture<Void> retFuture = SettableFuture.create();
 
