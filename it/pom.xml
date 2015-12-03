@@ -11,30 +11,26 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
 
   <parent>
     <groupId>org.opendaylight.controller</groupId>
-    <artifactId>mdsal-it-parent</artifactId>
-    <version>1.3.0-SNAPSHOT</version>
+    <artifactId>config-parent</artifactId>
+    <version>0.3.2-Lithium-SR2</version>
     <relativePath/>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
-  <groupId>distributed-tx</groupId>
+  <groupId>org.opendaylight.distributed.tx</groupId>
   <artifactId>distributed-tx-it</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <packaging>bundle</packaging>
 
   <properties>
     <skipITs>false</skipITs>
-    <karaf.distro.groupId>distributed-tx</karaf.distro.groupId>
-    <karaf.distro.artifactId>distributed-tx-karaf</karaf.distro.artifactId>
-    <karaf.distro.version>1.0.0-SNAPSHOT</karaf.distro.version>
-    <karaf.distro.type>zip</karaf.distro.type>
   </properties>
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>distributed-tx-features</artifactId>
-      <version>${project.version}</version>
+      <groupId>org.opendaylight.controller</groupId>
+      <artifactId>sal-binding-api</artifactId>
+      <version>${mdsal.version}</version>
     </dependency>
   </dependencies>
 

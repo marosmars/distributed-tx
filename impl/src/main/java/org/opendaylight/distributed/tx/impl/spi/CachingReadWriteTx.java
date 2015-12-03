@@ -17,6 +17,7 @@ import org.opendaylight.controller.md.sal.common.api.TransactionStatus;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.md.sal.common.api.data.ReadFailedException;
 import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
+import org.opendaylight.distributed.tx.api.DTxException;
 import org.opendaylight.distributed.tx.spi.CachedData;
 import org.opendaylight.distributed.tx.spi.DTXReadWriteTransaction;
 import org.opendaylight.distributed.tx.spi.TxCache;
@@ -82,7 +83,7 @@ public class CachingReadWriteTx implements TxCache, DTXReadWriteTransaction, Clo
             }
 
             @Override public void onFailure(final Throwable t) {
-                retFuture.setException(new ReadFailedException("failed to read from node in delete action", t));
+                retFuture.setException(new DTxException.EditFailedException("failed to read from node in delete action", t));
             }
         });
 
@@ -122,7 +123,7 @@ public class CachingReadWriteTx implements TxCache, DTXReadWriteTransaction, Clo
             }
 
             @Override public void onFailure(final Throwable t) {
-                retFuture.setException(new ReadFailedException("failed to read from node in merge action", t));
+                retFuture.setException(new DTxException.EditFailedException("failed to read from node in merge action", t));
             }
         });
 
@@ -169,7 +170,7 @@ public class CachingReadWriteTx implements TxCache, DTXReadWriteTransaction, Clo
             }
 
             @Override public void onFailure(final Throwable t) {
-                retFuture.setException(new ReadFailedException("failed to read from node in put action", t));
+                retFuture.setException(new DTxException.EditFailedException("failed to read from node in put action", t));
             }
         });
 
