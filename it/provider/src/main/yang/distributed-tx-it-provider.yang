@@ -22,7 +22,7 @@ module distributed-tx-it-provider {
     augment "/config:modules/config:module/config:configuration" {
         case distributed-tx-it-provider {
             when "/config:modules/config:module/config:type = 'distributed-tx-it-provider'";
-            container distributed-tx {
+            container dtx-provider {
                 uses config:service-ref {
                     refine type {
                         mandatory true;
