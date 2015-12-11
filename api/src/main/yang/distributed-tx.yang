@@ -14,6 +14,6 @@ module distributed-tx {
 
     identity dtx-provider {
         base config:service-type;
-        config:java-class "org.opendaylight.distributed.tx.DTxProvider";
+        config:java-class "org.opendaylight.distributed.tx.api.DTxProvider";
     }
 }

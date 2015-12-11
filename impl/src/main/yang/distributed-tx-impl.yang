@@ -5,7 +5,7 @@ module distributed-tx-impl {
 
     import config { prefix config; revision-date 2013-04-05; }
     import "distributed-tx-spi" { prefix "distributed-tx-spi"; revision-date 2014-12-10;}
-    import "distributed-tx" { prefix "dtx-provider"; revision-date 2015-01-05;}
+    import "distributed-tx" { prefix "disributed-tx"; revision-date 2015-01-05;}
 
     description
         "Service definition for distributed-tx project";
