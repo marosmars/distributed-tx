@@ -4,7 +4,7 @@ module distributed-tx-it-provider {
     prefix "distributed-tx-it-provider";
 
     import config { prefix config; revision-date 2013-04-05; }
-    import "distributed-tx" { prefix "distributed-tx"; revision-date 2015-01-05;}
+    import "distributed-tx-api" { prefix "distributed-tx-api"; revision-date 2015-01-05;}
 
     description
         "distributed-tx-it provider";
@@ -26,7 +26,7 @@ module distributed-tx-it-provider {
                 uses config:service-ref {
                     refine type {
                         mandatory true;
-                        config:required-identity distributed-tx:dtx-provider;
+                        config:required-identity distributed-tx-api:dtx-provider;
                     }
                 }
             }
