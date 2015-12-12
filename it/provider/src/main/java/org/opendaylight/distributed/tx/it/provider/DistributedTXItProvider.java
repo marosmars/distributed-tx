@@ -14,6 +14,7 @@ public class DistributedTXItProvider implements BindingAwareProvider, AutoClosea
 
     public  DistributedTXItProvider(DTxProvider provider){
         this.dTxProvider = provider;
+        log.info("FM: constructing DistributedTXItProvider");
     }
     @Override
     public void close() throws Exception {
@@ -23,7 +24,7 @@ public class DistributedTXItProvider implements BindingAwareProvider, AutoClosea
     @Override
     public void onSessionInitiated(BindingAwareBroker.ProviderContext session) {
         this.dtxItModelService = session.addRpcImplementation(DistributedTxItModelService.class, new DistributedTxProviderImpl(this.dTxProvider));
-        log.info("Service Distributed tx IT provider statred");
+        log.info("FM: Service Distributed tx IT provider statred");
     }
 }
 

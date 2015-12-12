@@ -17,8 +17,8 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
     <data xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
       <modules xmlns="urn:opendaylight:params:xml:ns:yang:controller:config">
         <module>
-          <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx:impl">prefix:distributed-tx</type>
-          <name>distributed-tx-default</name>
+          <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx:impl">prefix:distributed-tx-impl</type>
+          <name>distributed-tx-impl</name>
           <tx-provider>
             <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx:spi">prefix:tx-provider</type>
             <name>mount-point-tx-provider</name>

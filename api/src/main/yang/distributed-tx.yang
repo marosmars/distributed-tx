@@ -1,7 +1,7 @@
-module distributed-tx {
+module distributed-tx-api {
     yang-version 1;
-    namespace "urn:opendaylight:params:xml:ns:yang:distributed-tx";
-    prefix "distributed-tx";
+    namespace "urn:opendaylight:params:xml:ns:yang:distributed-tx-api";
+    prefix "distributed-tx-api";
 
     import config { prefix config; revision-date 2013-04-05; }
 

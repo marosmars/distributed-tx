@@ -12,33 +12,25 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
     <capability>urn:opendaylight:params:xml:ns:yang:distributed-tx:it:provider?module=distributed-tx-it-provider&amp;revision=2014-12-10</capability>
     <capability>urn:opendaylight:params:xml:ns:yang:controller:md:sal:binding?module=opendaylight-md-sal-binding&amp;revision=2013-10-28</capability>
 </required-capabilities>
-<configuration>
 
+<configuration>
     <data xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
         <modules xmlns="urn:opendaylight:params:xml:ns:yang:controller:config">
             <module>
                 <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx:it:provider">prefix:distributed-tx-it-provider</type>
-                <name>distributed-tx-it-provider-default</name>
+                <name>distributed-tx-it-provider</name>
                 <dtx-provider>
-                    <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx">prefix:dtx-provider</type>
-                    <name>distributed-tx</name>
+                    <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx-api">prefix:dtx-provider</type>
+                    <name>distributed-tx-impl</name>
                 </dtx-provider>
-            </module>
-            <module>
-                <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx:impl">prefix:distributed-tx</type>
-                <name>distributed-tx</name>
-                <broker>
-                    <type xmlns:binding="urn:opendaylight:params:xml:ns:yang:controller:md:sal:binding">binding:binding-broker-osgi-registry</type>
-                    <name>binding-osgi-broker</name>
-                </broker>
             </module>
         </modules>
         <services xmlns="urn:opendaylight:params:xml:ns:yang:controller:config">
             <service>
-                <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx">prefix:distributed-tx</type>
+                <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx-api">prefix:dtx-provider</type>
                 <instance>
-                    <name>distributed-tx</name>
-                    <provider>/modules/module[type='distributed-tx'][name='dtx-provider']</provider>
+                    <name>distributed-tx-impl</name>
+                    <provider>/modules/module[type='distributed-tx-impl'][name='distributed-tx-impl']</provider>
                 </instance>
             </service>
         </services>

@@ -21,12 +21,20 @@ public class DTXProviderService implements DTxProvider, AutoCloseable, BindingAw
     public DTXProviderService(TxProvider msProvider) {
         this.mountServiceProvider = msProvider;
         this.dtxProvider = new DTxProviderImpl(this.mountServiceProvider);
+        LOG.info("FM: constructing dtx provider.");
     }
 
     @Nonnull
     @Override
     public DTx newTx(@Nonnull Set<InstanceIdentifier<?>> nodes) throws DTxException.DTxInitializationFailedException {
+        LOG.info("FM: DTXPrividerService new dtx.");
         return this.dtxProvider.newTx(nodes);
+    }
+
+    @Nonnull
+    @Override
+    public void test() {
+        this.dtxProvider.test();
     }
 
     @Override
@@ -36,7 +44,7 @@ public class DTXProviderService implements DTxProvider, AutoCloseable, BindingAw
     }
 
     @Override
-    public void onSessionInitialized(BindingAwareBroker.ConsumerContext session) {
-        LOG.info("DTXPrividerService started.");
+    public void onSessionInitialized(BindingAwareBroker.ConsumerContext session){
+        LOG.info("FM: DTXPrividerService started.");
     }
 }

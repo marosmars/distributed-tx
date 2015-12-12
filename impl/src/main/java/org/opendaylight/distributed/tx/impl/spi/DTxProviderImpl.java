@@ -52,6 +52,12 @@ public class DTxProviderImpl implements DTxProvider, AutoCloseable {
         return dtxReleaseWrapper;
     }
 
+    @Nonnull
+    @Override
+    public void test() {
+        LOG.info("FM: this is a test.");
+    }
+
     @Override public void close() throws Exception {
         for (Map.Entry<Object, DtxReleaseWrapper> outstandingTx : currentTxs.entrySet()) {
             LOG.warn("Cancelling outstanding distributed transaction: {}", outstandingTx.getKey());

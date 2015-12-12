@@ -34,5 +34,25 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
     <feature version="${mdsal.version}">odl-mdsal-apidocs</feature>
     <feature version="${mdsal.version}">odl-mdsal-xsql</feature>
   </feature>
+  <feature name='odl-distributed-tx-spi' version='${project.version}' description='OpenDaylight :: distributed-tx :: SPI'>
+    <feature version="${project.version}">odl-distributed-tx-spi</feature>
+    <feature version="${mdsal.version}">odl-mdsal-apidocs</feature>
+    <feature version="${mdsal.version}">odl-mdsal-xsql</feature>
+  </feature>
+
+
+  <feature name='odl-distributed-tx-it-api' version='${project.version}' description='OpenDaylight :: distributed-tx :: it-api'>
+    <feature version='${yangtools.version}'>odl-yangtools-models</feature>
+    <bundle>mvn:org.opendaylight.distributed.tx/distributed-tx-it-model/${project.version}</bundle>
+  </feature>
+
+  <feature name='odl-distributed-tx-it' version='${project.version}' description='OpenDaylight :: distributed-tx :: it-provider'>
+    <feature version='${mdsal.version}'>odl-mdsal-broker</feature>
+    <feature version='${project.version}'>odl-distributed-tx-it-api</feature>
+    <feature version='${project.version}'>odl-distributed-tx-api</feature>
+    <feature version='${project.version}'>odl-distributed-tx</feature>
+    <bundle>mvn:org.opendaylight.distributed.tx/distributed-tx-it-provider/${project.version}</bundle>
+    <configfile finalname="${configfile.directory}/distributed-tx-it.xml">mvn:org.opendaylight.distributed.tx/distributed-tx-it-provider/${project.version}/xml/config</configfile>
+  </feature>
 
 </features>
