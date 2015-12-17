@@ -25,6 +25,7 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
                 </dtx-provider>
             </module>
         </modules>
+        <!--FIXME this should come from distributed-tx/impl/src/main/config/default-config.xml so there would be no need of defininf service here-->
         <services xmlns="urn:opendaylight:params:xml:ns:yang:controller:config">
             <service>
                 <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx-api">prefix:dtx-provider</type>

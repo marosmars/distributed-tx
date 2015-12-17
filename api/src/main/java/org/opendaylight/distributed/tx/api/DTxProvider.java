@@ -33,6 +33,8 @@ public interface DTxProvider {
      * TODO maybe break down the initialization ex
      */
     @Nonnull DTx newTx(@Nonnull Set<InstanceIdentifier<?>> nodes) throws DTxException.DTxInitializationFailedException;
+
+    // FIXME remove
     @Nonnull void test ();
 
 }

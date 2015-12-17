@@ -9,6 +9,9 @@ This program and the accompanying materials are made available under the
 terms of the Eclipse Public License v1.0 which accompanies this distribution,
 and is available at http://www.eclipse.org/legal/epl-v10.html
 -->
+<!--FIXME after this is properly working we need to migrate the dependencies to Beryllium version (or maybe even Boron, depending on the dates) -->
+<!--FIXME Migrating to Beryllium would change feature file, all the poms and maybe even code on some places -->
+
 <features name="odl-distributed-tx-${project.version}" xmlns="http://karaf.apache.org/xmlns/features/v1.2.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://karaf.apache.org/xmlns/features/v1.2.0 http://karaf.apache.org/xmlns/features/v1.2.0">
@@ -17,6 +20,12 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
   <repository>mvn:org.opendaylight.controller/features-restconf/${mdsal.version}/xml/features</repository>
   <feature name='odl-distributed-tx-api' version='${project.version}' description='OpenDaylight :: distributed-tx :: api'>
     <feature version='${yangtools.version}'>odl-yangtools-models</feature>
+    <!--FIXME API and SPI depend on config subsystem, but config subsystem is not here -->
+    <!--FIXME  This results in this failure during feature test
+      Unresolved constraint in bundle org.opendaylight.distributed.tx.distributed-tx-api [108]:
+      Unable to resolve 108.0: missing requirement [108.0] osgi.wiring.package;
+      (&(osgi.wiring.package=org.opendaylight.controller.config.api.annotations)(version>=0.3.0)(!(version>=1.0.0)))
+-->
     <bundle>mvn:org.opendaylight.distributed.tx/distributed-tx-api/${project.version}</bundle>
     <bundle>mvn:org.opendaylight.distributed.tx/distributed-tx-spi/${project.version}</bundle>
   </feature>

@@ -93,5 +93,7 @@ public interface DTx extends WriteTransaction {
             final InstanceIdentifier<?> instanceIdentifier,
             InstanceIdentifier<?> nodeId);
 
+    // FIXME javadoc needed to express rollback's contract (also necessary for other undocumented methods here)
+
     CheckedFuture<Void, DTxException.RollbackFailedException> rollback();
 }

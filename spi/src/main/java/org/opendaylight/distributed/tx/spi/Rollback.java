@@ -11,7 +11,7 @@ import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
  */
 public interface Rollback {
 
-    public ListenableFuture<Void> rollback(@Nonnull Map<InstanceIdentifier<?>, ? extends TxCache> nodeCache,
+    ListenableFuture<Void> rollback(@Nonnull Map<InstanceIdentifier<?>, ? extends TxCache> nodeCache,
         @Nonnull Map<InstanceIdentifier<?>, ? extends ReadWriteTransaction> nodeTx);
 
 }

@@ -41,6 +41,15 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
             <provider>/modules/module[type='mount-service-tx-provider'][name='mount-point-tx-provider']</provider>
           </instance>
         </service>
+        <!--FIXME service from IT for distributed-tx-impl should come here. Because not only IT wants to use the Dtx (that's why we are implementing it) -->
+        <!-- <service>
+                <type xmlns:prefix="urn:opendaylight:params:xml:ns:yang:distributed-tx-api">prefix:dtx-provider</type>
+                <instance>
+                    <name>distributed-tx-impl</name>
+                    <provider>/modules/module[type='distributed-tx-impl'][name='distributed-tx-impl']</provider>
+                </instance>
+            </service>
+            -->
       </services>
     </data>
   </configuration>

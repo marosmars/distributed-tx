@@ -8,6 +8,7 @@ import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 import org.opendaylight.yangtools.yang.data.api.ModifyAction;
 
+// FIXME javadoc needed for classes and methods (also for other SPI classes here)
 public final class CachedData {
 
     private final InstanceIdentifier<?> id;
