@@ -1,0 +1,21 @@
+module distributed-tx-it-model{
+        yang-version 1;
+        namespace "urn:opendaylight:params:xml:ns:yang:distributed-tx:it:model";
+        prefix "distributed-tx-it-model";
+
+        revision "2015-01-05" {
+                description "Initial revision of distributed-tx-it model";
+        }
+        rpc naive-test {
+                input {
+                        leaf name {
+                                type string;
+                        }
+                }
+                output {
+                        leaf result{
+                                type string;
+                        }
+                }
+        }
+}

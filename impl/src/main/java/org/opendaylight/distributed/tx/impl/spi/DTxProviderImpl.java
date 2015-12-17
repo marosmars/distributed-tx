@@ -12,6 +12,7 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 import org.opendaylight.controller.md.sal.common.api.TransactionStatus;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
+import org.opendaylight.controller.md.sal.common.api.data.ReadFailedException;
 import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
 import org.opendaylight.distributed.tx.api.DTx;
 import org.opendaylight.distributed.tx.api.DTxException;
@@ -51,6 +52,12 @@ public class DTxProviderImpl implements DTxProvider, AutoCloseable {
         return dtxReleaseWrapper;
     }
 
+    @Nonnull
+    @Override
+    public void test() {
+        LOG.info("FM: this is a test.");
+    }
+
     @Override public void close() throws Exception {
         for (Map.Entry<Object, DtxReleaseWrapper> outstandingTx : currentTxs.entrySet()) {
             LOG.warn("Cancelling outstanding distributed transaction: {}", outstandingTx.getKey());
@@ -81,6 +88,21 @@ public class DTxProviderImpl implements DTxProvider, AutoCloseable {
             final boolean cancel = delegate.cancel();
             releaseNodes();
             return cancel;
+        }
+
+        @Override
+        public <T extends DataObject> CheckedFuture<Void, ReadFailedException> mergeAndRollbackOnFailure(LogicalDatastoreType logicalDatastoreType, InstanceIdentifier<T> instanceIdentifier, T t, InstanceIdentifier<?> nodeId) throws DTxException.EditFailedException {
+            return delegate.mergeAndRollbackOnFailure(logicalDatastoreType, instanceIdentifier, t, nodeId);
+        }
+
+        @Override
+        public <T extends DataObject> CheckedFuture<Void, ReadFailedException> putAndRollbackOnFailure(LogicalDatastoreType logicalDatastoreType, InstanceIdentifier<T> instanceIdentifier, T t, InstanceIdentifier<?> nodeId) throws DTxException.EditFailedException {
+            return delegate.putAndRollbackOnFailure(logicalDatastoreType, instanceIdentifier, t, nodeId);
+        }
+
+        @Override
+        public CheckedFuture<Void, ReadFailedException> deleteAndRollbackOnFailure(LogicalDatastoreType logicalDatastoreType, InstanceIdentifier<?> instanceIdentifier, InstanceIdentifier<?> nodeId) throws DTxException.EditFailedException, DTxException.RollbackFailedException {
+            return delegate.deleteAndRollbackOnFailure(logicalDatastoreType, instanceIdentifier, nodeId);
         }
 
         @Override public void delete(final LogicalDatastoreType logicalDatastoreType,
@@ -165,5 +187,7 @@ public class DTxProviderImpl implements DTxProvider, AutoCloseable {
         @Override public Object getIdentifier() {
             return delegate.getIdentifier();
         }
+        @Override
+        public CheckedFuture<Void, DTxException.RollbackFailedException> rollback(){return delegate.rollback();};
     }
 }

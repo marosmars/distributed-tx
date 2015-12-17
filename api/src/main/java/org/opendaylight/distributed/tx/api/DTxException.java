@@ -5,7 +5,7 @@ import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 
 public class DTxException extends RuntimeException {
 
-    public DTxException(final String s, final Exception e) {
+    public DTxException(final String s, final Throwable e) {
         super(s, e);
     }
 
@@ -31,6 +31,7 @@ public class DTxException extends RuntimeException {
         public EditFailedException(final String s) {
             super(s);
         }
+        public EditFailedException(final String s, final Throwable e){super(s, e);}
     }
 
     /**
