@@ -2,16 +2,22 @@ package org.opendaylight.distributed.tx.impl.spi;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.util.concurrent.*;
-
+import com.google.common.util.concurrent.CheckedFuture;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ExecutorService;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
 import org.opendaylight.controller.md.sal.binding.api.ReadWriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.TransactionStatus;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
@@ -21,20 +27,20 @@ import org.opendaylight.distributed.tx.api.DTxException;
 import org.opendaylight.distributed.tx.spi.CachedData;
 import org.opendaylight.distributed.tx.spi.DTXReadWriteTransaction;
 import org.opendaylight.distributed.tx.spi.TxCache;
-import org.opendaylight.distributed.tx.spi.TxException;
 import org.opendaylight.yangtools.yang.binding.DataObject;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 import org.opendaylight.yangtools.yang.common.RpcResult;
 import org.opendaylight.yangtools.yang.data.api.ModifyAction;
-import com.google.common.util.concurrent.SettableFuture;
 
 public class CachingReadWriteTx implements TxCache, DTXReadWriteTransaction, Closeable {
 
     private final ReadWriteTransaction delegate;
+    private final ListeningExecutorService executor;
     public final Deque<CachedData> cache = new ConcurrentLinkedDeque<>();
 
-    public CachingReadWriteTx(@Nonnull final ReadWriteTransaction delegate) {
+    public CachingReadWriteTx(@Nonnull final ReadWriteTransaction delegate, @Nonnull ExecutorService executor) {
         this.delegate = delegate;
+        this.executor = MoreExecutors.listeningDecorator(executor);
     }
 
     @Override public Iterator<CachedData> iterator() {
@@ -159,14 +165,30 @@ public class CachingReadWriteTx implements TxCache, DTXReadWriteTransaction, Clo
         Futures.addCallback(read, new FutureCallback<Optional<T>>() {
             @Override public void onSuccess(final Optional<T> result) {
                 cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.REPLACE));
-                try {
-                    delegate.put(logicalDatastoreType, instanceIdentifier, t);
-                } catch (RuntimeException e) {
-                    retFuture.setException(e);
 
-                    return;
-                }
-                retFuture.set(null);
+                // Subsequent operation needs to be performed from a different thread (than the one callback is coming from)
+                // to avoid deadlock
+                // e.g. when underlying transaction comes from netconf (due to netty's threading limitations)
+                // we would deadlock the thread that's dedicated to the session
+                final ListenableFuture<Void> asyncPut = executor.submit(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        delegate.put(logicalDatastoreType, instanceIdentifier, t);
+                        return null;
+                    }
+                });
+
+                Futures.addCallback(asyncPut, new FutureCallback<Void>() {
+                    @Override
+                    public void onSuccess(@Nullable final Void aVoid) {
+                        retFuture.set(null);
+                    }
+
+                    @Override
+                    public void onFailure(final Throwable throwable) {
+                        retFuture.setException(throwable);
+                    }
+                });
             }
 
             @Override public void onFailure(final Throwable t) {
