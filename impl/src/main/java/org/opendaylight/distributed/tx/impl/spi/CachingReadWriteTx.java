@@ -2,6 +2,7 @@ package org.opendaylight.distributed.tx.impl.spi;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -13,7 +14,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Deque;
 import java.util.Iterator;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import javax.annotation.Nonnull;
@@ -162,39 +162,33 @@ public class CachingReadWriteTx implements TxCache, DTXReadWriteTransaction, Clo
 
         final SettableFuture<Void> retFuture = SettableFuture.create();
 
-        Futures.addCallback(read, new FutureCallback<Optional<T>>() {
-            @Override public void onSuccess(final Optional<T> result) {
-                cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.REPLACE));
-
-                // Subsequent operation needs to be performed from a different thread (than the one callback is coming from)
-                // to avoid deadlock
-                // e.g. when underlying transaction comes from netconf (due to netty's threading limitations)
-                // we would deadlock the thread that's dedicated to the session
-                final ListenableFuture<Void> asyncPut = executor.submit(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        delegate.put(logicalDatastoreType, instanceIdentifier, t);
-                        return null;
-                    }
-                });
-
-                Futures.addCallback(asyncPut, new FutureCallback<Void>() {
-                    @Override
-                    public void onSuccess(@Nullable final Void aVoid) {
-                        retFuture.set(null);
-                    }
-
-                    @Override
-                    public void onFailure(final Throwable throwable) {
-                        retFuture.setException(throwable);
-                    }
-                });
+        read.addListener(new Runnable() {
+            @Override
+            public void run() {
+                Preconditions.checkState(read.isDone());
+                try {
+                    onSuccess(read.checkedGet());
+                } catch (Throwable e) {
+                    onFailure(e);
+                }
             }
 
-            @Override public void onFailure(final Throwable t) {
+            public void onSuccess(final Optional<T> result) {
+                cache.add(new CachedData(instanceIdentifier, result.get(), ModifyAction.REPLACE));
+                try {
+                    delegate.put(logicalDatastoreType, instanceIdentifier, t);
+                } catch (RuntimeException e) {
+                    retFuture.setException(e);
+
+                    return;
+                }
+                retFuture.set(null);
+            }
+
+            public void onFailure(final Throwable t) {
                 retFuture.setException(new DTxException.EditFailedException("failed to read from node in put action", t));
             }
-        });
+        }, executor);
 
         return Futures.makeChecked(retFuture, new Function<Exception, ReadFailedException>() {
             @Nullable
